@@ -5,8 +5,6 @@ from aiogram.filters import CommandStart
 
 TOKEN = "8583216589:AAFZ1g8ZcS7fdOmdWjHuD4voLSFudgppkWI"
 
-# Подключаемся по прямому IP-адресу к рабочему HTTP-прокси
-# Провайдер не сможет заблокировать это по DNS, так как буквенного имени нет
 session = AiohttpSession(proxy="http://138.197.148.214:8080")
 
 bot = Bot(token=TOKEN, session=session)
@@ -26,7 +24,7 @@ async def main():
         await bot.delete_webhook(drop_pending_updates=True)
         await dp.start_polling(bot)
     finally:
-        # Красиво закрываем сессию при выходе, чтобы не было ошибок в консоли
+        
         await bot.session.close()
 
 if __name__ == "__main__":
