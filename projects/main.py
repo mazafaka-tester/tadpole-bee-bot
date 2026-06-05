@@ -26,12 +26,13 @@ async def download_video(message: types.Message):
 
     # Настройки yt-dlp: убираем жесткий лимит размера, но просим скачать 
     # лучшее качество, которое при этом укладывается в 50 МБ (размер в байтах)
+    # Упрощенные настройки для работы БЕЗ FFmpeg
     ydl_opts = {
-        # Скрипт пытается взять лучшее качество, но если оно тяжелое, 
-        # автоматически выбирает формат полегче, чтобы влезть в лимит TG
-        'format': 'bestvideo[filesize<45M]+bestaudio/best[filesize<45M]/best',
+        # Ищем готовое видео со звуком (ext=mp4), которое весит меньше 45 МБ
+        'format': 'best[ext=mp4][filesize<45M]/best[ext=mp4]/best',
         'outtmpl': 'downloads/%(id)s.%(ext)s',
-        'merge_output_format': 'mp4',
+        'no_warnings': True,
+        'quiet': True
     }
 
     try:
