@@ -20,7 +20,9 @@ async def main():
     app.router.add_get('/', handle)
     runner = web.AppRunner(app)
     await runner.setup()
-    site = web.TCPSite(runner, '0.0.0.0', 10000)
+    port = int(os.environ.get("PORT", 10000))
+    site = web.TCPSite(runner, '0.0.0.0', port)
+    print(f"Мини-сервер запущен на порту {port}")
     await site.start()
     
     print("Мини-сервер запущен на порту 10000")
