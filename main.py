@@ -31,14 +31,15 @@ async def main():
     runner = web.AppRunner(app)
     await runner.setup()
     
-    port = int(os.environ.get("PORT", 10000))
+    # Жестко ставим порт 8080, который так сильно хочет Render
+    port = 8080
     site = web.TCPSite(runner, '0.0.0.0', port)
     await site.start()
     
-    print(f"Мини-сервер запущен на порту {port}")
-    print("Бот Максим успешно запущен!")
+    print(f"Мини-сервер успешно обманул Render на порту {port}")
+    print("Бот Максим официально запущен!")
     
-    # Запуск бота
+    # Запуск самого бота
     await dp.start_polling(bot)
 
 if __name__ == '__main__':
