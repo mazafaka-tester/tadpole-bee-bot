@@ -1,5 +1,6 @@
 import asyncio
 import os
+import sys
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import CommandStart
 from aiohttp import web
@@ -12,7 +13,7 @@ dp = Dispatcher()
 
 @dp.message(CommandStart())
 async def start_cmd(message: types.Message):
-    await message.answer(f"Привет, {message.from_user.first_name}! Бот Максим обновлен. Теперь качаем в максимальном качестве со звуком! 🎬🚀")
+    await message.answer(f"Привет, {message.from_user.first_name}! Бот Максим обновлен. Включена принудительная склейка звука в Full HD! 🔊🔥")
 
 @dp.message()
 async def download_video(message: types.Message):
@@ -29,16 +30,23 @@ async def download_video(message: types.Message):
         )
         return
 
-    status_message = await message.answer("🔄 Скачиваю видео в наилучшем качестве... Пожалуйста, подожди.")
+    status_message = await message.answer("🔄 Скачиваю видео и аудиодорожку высокого качества...")
 
-    # ВОЗВРАЩАЕМ МАКСИМАЛЬНОЕ КАЧЕСТВО (благодаря FFmpeg)
+    # Находим, куда именно Python установил FFmpeg
+    ffmpeg_dir = os.path.join(sys.prefix, 'bin')
+    if not os.path.exists(os.path.join(ffmpeg_dir, 'ffmpeg')):
+        # Запасной путь для некоторых версий Linux окружений
+        ffmpeg_dir = sys.prefix
+
     ydl_opts = {
-        # Ищем лучшее видео (до 45МБ) + лучшее аудио и склеиваем в mp4
+        # Принудительно качаем лучшее видео + лучшее аудио
         'format': 'bestvideo[filesize<45M]+bestaudio/best[filesize<45M]/best',
         'outtmpl': 'downloads/%(id)s.%(ext)s',
         'merge_output_format': 'mp4',
         'no_warnings': True,
-        'quiet': True
+        'quiet': True,
+        # ПРИНУДИТЕЛЬНО указываем путь к FFmpeg, чтобы yt-dlp точно его увидел!
+        'ffmpeg_location': ffmpeg_dir,
     }
 
     try:
@@ -47,7 +55,6 @@ async def download_video(message: types.Message):
             info = await loop.run_in_executor(None, lambda: ydl.extract_info(url, download=True))
             filename = ydl.prepare_filename(info)
             
-            # Если после склейки расширение изменилось
             if not os.path.exists(filename):
                 base, _ = os.path.splitext(filename)
                 filename = base + ".mp4"
@@ -60,19 +67,19 @@ async def download_video(message: types.Message):
                 os.remove(filename)
                 return
 
-            await status_message.edit_text(f"⏳ Видео готово ({filesize:.1f} МБ). Отправляю в HD...")
+            await status_message.edit_text(f"⏳ Склеивание завершено! Размер: {filesize:.1f} МБ. Отправляю...")
             
             video_file = types.FSInputFile(filename)
-            await message.answer_video(video=video_file, caption="Держи видео в отличном качестве! 🔥")
+            await message.answer_video(video=video_file, caption="Вот твое видео со стерео-звуком и в HD качестве! 🌟")
             
             os.remove(filename)
             await status_message.delete()
         else:
-            await status_message.edit_text("❌ Ошибка: файл потерялся при сборке.")
+            await status_message.edit_text("❌ Ошибка при обработке файлов кодеками.")
 
     except Exception as e:
         print(f"Ошибка загрузки: {e}")
-        await status_message.edit_text("❌ Не удалось скачать. Возможно, сработала защита платформы.")
+        await status_message.edit_text(f"❌ Ошибка склейки дорожек.\nТехнический лог: `{str(e)[:200]}`")
         if 'filename' in locals() and os.path.exists(filename):
             os.remove(filename)
 
@@ -80,11 +87,10 @@ async def handle(request):
     return web.Response(text="Бот Максим работает!")
 
 async def main():
-    # ХАК: Скачиваем FFmpeg прямо в папку проекта, обходя запреты Render!
-    print("Установка FFmpeg внутри окружения...")
+    # Принудительная установка FFmpeg в системную папку Python-окружения
+    print("Проверка и установка FFmpeg...")
     os.system("ffdl install --add-path")
-    print("FFmpeg успешно настроен!")
-
+    
     if not os.path.exists('downloads'):
         os.makedirs('downloads')
 
@@ -97,7 +103,7 @@ async def main():
     site = web.TCPSite(runner, '0.0.0.0', port)
     await site.start()
     
-    print("Бот Максим в HD-режиме запущен!")
+    print("Бот Максим в супер-HD запущен!")
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
