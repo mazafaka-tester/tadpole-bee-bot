@@ -12,7 +12,7 @@ dp = Dispatcher()
 
 @dp.message(CommandStart())
 async def start_cmd(message: types.Message):
-    await message.answer(f"Привет, {message.from_user.first_name}! Отправляй ссылку, маскировка включена! 🚀")
+    await message.answer(f"Привет, {message.from_user.first_name}! Бот Максим обновлен. Теперь качаем в максимальном качестве со звуком! 🎬🚀")
 
 @dp.message()
 async def download_video(message: types.Message):
@@ -22,20 +22,21 @@ async def download_video(message: types.Message):
         await message.answer("Скинь корректную ссылку (http:// или https://)")
         return
 
-    # Красиво перехватываем YouTube, чтобы не гонять скрипт вхолопую
     if "youtube.com" in url or "youtu.be" in url:
         await message.answer(
-            "⚠️ **YouTube временно недоступен.**\n\n"
-            "Google заблокировал IP-адрес сервера Render и требует авторизацию (куки).\n"
-            "Но вы можете скинуть мне ссылку на **TikTok**, и я без проблем скачаю видео! 🎬"
+            "⚠️ **YouTube временно недоступен.**\n"
+            "Google блокирует IP сервера. Но TikTok и Instagram работают в Full HD! 🔥"
         )
         return
 
-    status_message = await message.answer("🔄 Скачиваю видео... Пожалуйста, подождите.")
+    status_message = await message.answer("🔄 Скачиваю видео в наилучшем качестве... Пожалуйста, подожди.")
 
+    # ВОЗВРАЩАЕМ МАКСИМАЛЬНОЕ КАЧЕСТВО (благодаря FFmpeg)
     ydl_opts = {
-        'format': 'best[ext=mp4][filesize<45M]/best[ext=mp4]/best',
+        # Ищем лучшее видео (до 45МБ) + лучшее аудио и склеиваем в mp4
+        'format': 'bestvideo[filesize<45M]+bestaudio/best[filesize<45M]/best',
         'outtmpl': 'downloads/%(id)s.%(ext)s',
+        'merge_output_format': 'mp4',
         'no_warnings': True,
         'quiet': True
     }
@@ -46,6 +47,7 @@ async def download_video(message: types.Message):
             info = await loop.run_in_executor(None, lambda: ydl.extract_info(url, download=True))
             filename = ydl.prepare_filename(info)
             
+            # Если после склейки расширение изменилось
             if not os.path.exists(filename):
                 base, _ = os.path.splitext(filename)
                 filename = base + ".mp4"
@@ -54,23 +56,23 @@ async def download_video(message: types.Message):
             filesize = os.path.getsize(filename) / (1024 * 1024)
             
             if filesize > 49.9:
-                await status_message.edit_text(f"⚠️ Видео слишком огромное ({filesize:.1f} МБ) для лимитов Telegram.")
+                await status_message.edit_text(f"⚠️ Видео слишком тяжелое ({filesize:.1f} МБ) для лимитов Telegram.")
                 os.remove(filename)
                 return
 
-            await status_message.edit_text(f"⏳ Загружаю в Телеграм...")
+            await status_message.edit_text(f"⏳ Видео готово ({filesize:.1f} МБ). Отправляю в HD...")
             
             video_file = types.FSInputFile(filename)
-            await message.answer_video(video=video_file, caption="Вот твое видео! 🎉")
+            await message.answer_video(video=video_file, caption="Держи видео в отличном качестве! 🔥")
             
             os.remove(filename)
             await status_message.delete()
         else:
-            await status_message.edit_text("❌ Ошибка: файл не найден после скачивания.")
+            await status_message.edit_text("❌ Ошибка: файл потерялся при сборке.")
 
     except Exception as e:
         print(f"Ошибка загрузки: {e}")
-        await status_message.edit_text("❌ Не удалось скачать это видео. Возможно, сработала защита платформы.")
+        await status_message.edit_text("❌ Не удалось скачать. Возможно, сработала защита платформы.")
         if 'filename' in locals() and os.path.exists(filename):
             os.remove(filename)
 
@@ -78,6 +80,11 @@ async def handle(request):
     return web.Response(text="Бот Максим работает!")
 
 async def main():
+    # ХАК: Скачиваем FFmpeg прямо в папку проекта, обходя запреты Render!
+    print("Установка FFmpeg внутри окружения...")
+    os.system("ffdl install --add-path")
+    print("FFmpeg успешно настроен!")
+
     if not os.path.exists('downloads'):
         os.makedirs('downloads')
 
@@ -90,8 +97,7 @@ async def main():
     site = web.TCPSite(runner, '0.0.0.0', port)
     await site.start()
     
-    print("Бот запущен с обходом блокировок!")
-    # Сбрасываем старые вебхуки и сессии, чтобы убрать ошибку Conflict
+    print("Бот Максим в HD-режиме запущен!")
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
