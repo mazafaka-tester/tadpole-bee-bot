@@ -15,7 +15,6 @@ async def start_cmd(message: types.Message):
     await message.answer(f"Привет, {message.from_user.first_name}! Отправляй ссылку, маскировка включена! 🚀")
 
 @dp.message()
-@dp.message()
 async def download_video(message: types.Message):
     url = message.text
     
@@ -74,3 +73,27 @@ async def download_video(message: types.Message):
         await status_message.edit_text("❌ Не удалось скачать это видео. Возможно, сработала защита платформы.")
         if 'filename' in locals() and os.path.exists(filename):
             os.remove(filename)
+
+async def handle(request):
+    return web.Response(text="Бот Максим работает!")
+
+async def main():
+    if not os.path.exists('downloads'):
+        os.makedirs('downloads')
+
+    app = web.Application()
+    app.router.add_get('/', handle)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    
+    port = 8080
+    site = web.TCPSite(runner, '0.0.0.0', port)
+    await site.start()
+    
+    print("Бот запущен с обходом блокировок!")
+    # Сбрасываем старые вебхуки и сессии, чтобы убрать ошибку Conflict
+    await bot.delete_webhook(drop_pending_updates=True)
+    await dp.start_polling(bot)
+
+if __name__ == '__main__':
+    asyncio.run(main())
