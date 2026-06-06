@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>История скачиваний</title>
+</head>
+<body>
+    <h1>Робот {{ bot_name }} приветствует тебя!</h1>
+    <h3>Вот что я успел скачать:</h3>
+    <ul>
+        {% for link in links %}
+            <li>{{ link }}</li>
+        {% endfor %}
+    </ul>
+    <a href="/download">Скачать еще (не забудь параметры в URL)</a>
+</body>
+</html>

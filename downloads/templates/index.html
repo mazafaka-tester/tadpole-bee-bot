@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Главная - Робот Максим</title>
+</head>
+<body>
+    <h1>Привет! Я робот {{ bot_name }}</h1>
+    <p>Вставь ссылку ниже, чтобы я её скачал:</p>
+    
+    <!-- Форма отправляет данные на адрес /download методом GET -->
+    <form action="/download" method="get">
+        <input type="text" name="link" placeholder="http://example.com" required>
+        <button type="submit">Скачать!</button>
+    </form>
+
+    <br>
+    <a href="/history">Посмотреть историю</a>
+</body>
+</html>
